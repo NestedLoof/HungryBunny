@@ -7,56 +7,38 @@ int DISPLAY_WIDTH = 640;
 int DISPLAY_HEIGHT = 368;
 int DISPLAY_SCALE = 1;
 
+// audio volumes
+float MUSIC_VOLUME = 0.1f;
+
+// animation speeds - lower is slower
+float waterAnimationSpeed = 0.15f;
+float runAnimationSpeed = 0.25f;
+float walkAnimationSpeed = 0.15f;
+float idleAnimationSpeed = 0.1f;
+
+// player speeds
+int runSpeed = 2;
+int walkSpeed = 1;
+
 struct GameState
 {
 	int score{ 0 };
 };
 GameState gameState;
 
-void HandlePlayerControls();
-
-// TODO REMOVE
-void UpdateFan();
-void UpdateTools();
-void UpdateCoinsAndStars();
-
 enum GameObjectType
 {
 	TYPE_NULL,
-	TYPE_BUNNY,
-	TYPE_FAN,
-	TYPE_TOOL,
-	TYPE_COIN,
-	TYPE_STAR,
-	TYPE_DESTROYED
+	TYPE_BUNNY, // the player character
+	TYPE_DESTROYED, // all objects of this type are destroyed at the end of each MainGameUpdate/tick
 };
 
-// scales up the game if the screen resolution is large enough
-void InitDisplaySize()
-{
-	// Get a handle to the desktop window
-	const HWND hDesktop = GetDesktopWindow();
-
-	RECT desktop;
-	GetWindowRect(hDesktop, &desktop);
-
-	// The top left corner will have coordinates (0,0)
-	// and the bottom right corner will have coordinates for the screen size
-	int x = desktop.right;
-	int y = desktop.bottom;
-	if (x > (DISPLAY_WIDTH * 4) + 40 && y > (DISPLAY_HEIGHT * 4) + 40)
-	{
-		DISPLAY_SCALE = 4;
-	}
-	else if (x > (DISPLAY_WIDTH * 3) + 40 && y > (DISPLAY_HEIGHT * 3) + 40)
-	{
-		DISPLAY_SCALE = 3;
-	}
-	else if (x > (DISPLAY_WIDTH * 2) + 40 && y > (DISPLAY_HEIGHT * 2) + 40)
-	{
-		DISPLAY_SCALE = 2;
-	}
-}
+//! @brief Updates the player character and redraws it.
+void UpdatePlayer();
+//! @brief Updates the player character based on user input.
+void HandleControls();
+//! @brief Scales up the game's display size depending on the user's current screen resolution.
+void InitDisplaySize();
 
 // The entry point for a PlayBuffer program
 void MainGameEntry( PLAY_IGNORE_COMMAND_LINE )
@@ -65,68 +47,91 @@ void MainGameEntry( PLAY_IGNORE_COMMAND_LINE )
 	Play::CreateManager( DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_SCALE );
 	Play::CentreAllSpriteOrigins();
 
-	Play::LoadBackground("Data\\Backgrounds\\grassbackground3.png");
+	Play::LoadBackground("Data\\Backgrounds\\grassbackgroundTEST.png");
 	Play::StartAudioLoop("music");
-	Play::Audio::SetLoopingSoundVolume("music", 0.02);
-	Play::CreateGameObject(TYPE_BUNNY, { DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2 }, 8, "bunny");
+	Play::Audio::SetLoopingSoundVolume("music", MUSIC_VOLUME);
+
+
+	Play::CreateGameObject(TYPE_BUNNY, { DISPLAY_WIDTH/2, 24 }, 8, "bunny");
 	GameObject& obj_bunny = Play::GetGameObjectByType(TYPE_BUNNY);
-	Play::SetSprite(obj_bunny, "bunny_downidle", 0.05f);
+	Play::SetSprite(obj_bunny, "bunny_downidle", idleAnimationSpeed);
 }
 
 // Called by PlayBuffer every frame (60 times a second!)
 bool MainGameUpdate( float elapsedTime )
 {
 	Play::DrawBackground();
-	HandlePlayerControls();
-
+	HandleControls();
 	Play::PresentDrawingBuffer();
 	return Play::KeyDown( KEY_ESCAPE );
 }
 
-void HandlePlayerControls()
+// Gets called once when the player quits the game 
+int MainGameExit(void)
+{
+	Play::DestroyManager();
+	return PLAY_OK;
+}
+
+void UpdatePlayer()
+{
+	
+}
+
+void HandleControls()
 {
 	GameObject& obj_bunny = Play::GetGameObjectByType(TYPE_BUNNY);
-	float waterAnimationSpeed = 0.15f;
-	float runAnimationSpeed = 0.3f;
-	float walkAnimationSpeed = 0.15f;
-	float idleAnimationSpeed = 0.1f;
-	int runSpeed = 2;
-	int walkSpeed = 1;
 
-	// current sprite
-	int currentSpriteId = obj_bunny.spriteId;
-	string currentSpriteName = Play::GetSpriteName(currentSpriteId);
-	for (auto& c : currentSpriteName)
-	{
-		c = tolower(c);
-	}
 
-	//vector<string> waterSprites = { "bunny_leftwater", "bunny_rightwater", "bunny_upwater", "bunny_downwater" };
-	vector<string> upSprites = { "bunny_upidle_8", "bunny_upwalk_8", "bunny_uprun_8", "bunny_upwater_8" };
-	vector<string> downSprites = { "bunny_downidle_8", "bunny_downwalk_8", "bunny_downrun_8", "bunny_downwater_8" };
-	vector<string> leftSprites = { "bunny_leftidle_8", "bunny_leftwalk_8", "bunny_leftrun_8", "bunny_leftwater_8" };
-	vector<string> rightSprites = { "bunny_rightidle_8", "bunny_rightwalk_8", "bunny_rightrun_8", "bunny_rightwater_8" };
+	// TODO - only do the water animation once, then go back to the idle animation in the same direction
+	// TODO - do not allow the player to move while watering
+	// TODO - tidy up the code / refactor
 
-	// water animation
+	// water animations
 	if (Play::KeyDown(Play::KEY_SPACE))
 	{
-		if (count(upSprites.begin(), upSprites.end(), currentSpriteName) > 0)
+		// check what direction the player is facing and set the correct water animation
+		int currentSpriteId = obj_bunny.spriteId;
+		string currentSpriteName = Play::GetSpriteName(currentSpriteId);
+		
+		if (Play::KeyDown(Play::KEY_UP)
+			|| Play::KeyDown(Play::KEY_W))
 		{
 			Play::SetSprite(obj_bunny, "bunny_upwater", waterAnimationSpeed);
 		}
-		else if (count(downSprites.begin(), downSprites.end(), currentSpriteName) > 0)
+		else if (Play::KeyDown(Play::KEY_DOWN)
+			|| Play::KeyDown(Play::KEY_S))
 		{
 			Play::SetSprite(obj_bunny, "bunny_downwater", waterAnimationSpeed);
 		}
-		else if (count(leftSprites.begin(), leftSprites.end(), currentSpriteName) > 0)
+		else if (Play::KeyDown(Play::KEY_LEFT)
+			|| Play::KeyDown(Play::KEY_A))
 		{
 			Play::SetSprite(obj_bunny, "bunny_leftwater", waterAnimationSpeed);
 		}
-		else if (count(rightSprites.begin(), rightSprites.end(), currentSpriteName) > 0)
+		else if (Play::KeyDown(Play::KEY_RIGHT)
+			|| Play::KeyDown(Play::KEY_D))
+		{
+			Play::SetSprite(obj_bunny, "bunny_rightwater", waterAnimationSpeed);
+		}
+		else if (currentSpriteName.find("UP") != std::string::npos)
+		{
+			Play::SetSprite(obj_bunny, "bunny_upwater", waterAnimationSpeed);
+		}
+		else if ((currentSpriteName.find("DOWN") != std::string::npos))
+		{
+			Play::SetSprite(obj_bunny, "bunny_downwater", waterAnimationSpeed);
+		}
+		else if (currentSpriteName.find("LEFT") != std::string::npos)
+		{
+			Play::SetSprite(obj_bunny, "bunny_leftwater", waterAnimationSpeed);
+		}
+		else if (currentSpriteName.find("RIGHT") != std::string::npos)
 		{
 			Play::SetSprite(obj_bunny, "bunny_rightwater", waterAnimationSpeed);
 		}
 
+		//stand still while watering
 		obj_bunny.velocity = { 0, 0 };
 	}
 	// run animations
@@ -134,25 +139,25 @@ void HandlePlayerControls()
 		&& (Play::KeyDown(Play::KEY_UP) || Play::KeyDown(Play::KEY_W)))
 	{
 		obj_bunny.velocity = { 0, runSpeed };
-		Play::SetSprite(obj_bunny, "bunny_uprun", walkAnimationSpeed);
+		Play::SetSprite(obj_bunny, "bunny_uprun", runAnimationSpeed);
 	}
 	else if (Play::KeyDown(Play::KEY_SHIFT)
 		&& (Play::KeyDown(Play::KEY_DOWN) || Play::KeyDown(Play::KEY_S)))
 	{
 		obj_bunny.velocity = { 0, -runSpeed };
-		Play::SetSprite(obj_bunny, "bunny_downrun", walkAnimationSpeed);
+		Play::SetSprite(obj_bunny, "bunny_downrun", runAnimationSpeed);
 	}
 	else if (Play::KeyDown(Play::KEY_SHIFT)
 		&& (Play::KeyDown(Play::KEY_LEFT) || Play::KeyDown(Play::KEY_A)))
 	{
 		obj_bunny.velocity = { -runSpeed, 0 };
-		Play::SetSprite(obj_bunny, "bunny_leftrun", walkAnimationSpeed);
+		Play::SetSprite(obj_bunny, "bunny_leftrun", runAnimationSpeed);
 	}
 	else if (Play::KeyDown(Play::KEY_SHIFT)
 		&& (Play::KeyDown(Play::KEY_RIGHT) || Play::KeyDown(Play::KEY_D)))
 	{
 		obj_bunny.velocity = { runSpeed, 0 };
-		Play::SetSprite(obj_bunny, "bunny_rightrun", walkAnimationSpeed);
+		Play::SetSprite(obj_bunny, "bunny_rightrun", runAnimationSpeed);
 	}
 	// walk animations
 	else if (Play::KeyDown(Play::KEY_UP) || Play::KeyDown(Play::KEY_W))
@@ -196,18 +201,45 @@ void HandlePlayerControls()
 		obj_bunny.velocity = { 0, 0 };
 		Play::SetSprite(obj_bunny, "bunny_downidle", idleAnimationSpeed);
 	}
-	
 
+	// update and draw the player
 	Play::UpdateGameObject(obj_bunny);
-	if (Play::IsHitboxLeavingDisplayArea(obj_bunny, Play::ALL))
+	if (Play::IsHitboxLeavingDisplayArea(obj_bunny))
+	{
 		obj_bunny.pos = obj_bunny.oldPos;
+	}
 	Play::DrawObjectRotated(obj_bunny);
 }
 
-// Gets called once when the player quits the game 
-int MainGameExit( void )
+// scales up the game if the player's screen is large enough
+void InitDisplaySize()
 {
-	Play::DestroyManager();
-	return PLAY_OK;
+	// Get a handle to the desktop window
+	const HWND hDesktop = GetDesktopWindow();
+
+	// The top left corner will have coordinates (0,0)
+	// and the bottom right corner will have coordinates for the screen size
+	RECT desktop;
+	GetWindowRect(hDesktop, &desktop);
+	int x = desktop.right;
+	int y = desktop.bottom;
+
+	// make the game bigger if the screen resolution is large enough. Leaving extra room so game isn't maximised.
+	int extraRoom = 20;
+	if (x > (DISPLAY_WIDTH * 4) + extraRoom
+		&& y > (DISPLAY_HEIGHT * 4) + extraRoom)
+	{
+		DISPLAY_SCALE = 4;
+	}
+	else if (x > (DISPLAY_WIDTH * 3) + extraRoom
+		&& y > (DISPLAY_HEIGHT * 3) + extraRoom)
+	{
+		DISPLAY_SCALE = 3;
+	}
+	else if (x > (DISPLAY_WIDTH * 2) + extraRoom
+		&& y > (DISPLAY_HEIGHT * 2) + extraRoom)
+	{
+		DISPLAY_SCALE = 2;
+	}
 }
 
