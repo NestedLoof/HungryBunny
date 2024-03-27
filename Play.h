@@ -5208,24 +5208,24 @@ namespace Play
 		if (obj.type == -1) return false; // Not for noObject
 
 		int spriteID = obj.spriteId;
-		Vector2f spriteSize = { obj.radius, obj.radius };
+		Vector2f hitbox = { obj.radius, obj.radius };
 		Point2f pos = TRANSFORM_SPACE(obj.pos);
 
 		if (dirn != Direction::VERTICAL)
 		{
-			if (pos.x - spriteSize.width < 0 && obj.velocity.x < 0)
+			if (pos.x - hitbox.width < 0 && obj.velocity.x < 0)
 				return true;
 
-			if (pos.x + spriteSize.width > Window::GetWidth() && obj.velocity.x > 0)
+			if (pos.x + hitbox.width > Window::GetWidth() && obj.velocity.x > 0)
 				return true;
 		}
 
 		if (dirn != Direction::HORIZONTAL)
 		{
-			if (pos.y - spriteSize.height < 0 && obj.velocity.y < 0)
+			if (pos.y - hitbox.height < 0 && obj.velocity.y < 0)
 				return true;
 
-			if (pos.y + spriteSize.height > Window::GetHeight() && obj.velocity.y > 0)
+			if (pos.y + hitbox.height > Window::GetHeight() && obj.velocity.y > 0)
 				return true;
 		}
 

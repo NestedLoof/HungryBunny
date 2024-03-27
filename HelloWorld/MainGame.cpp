@@ -11,14 +11,18 @@ int DISPLAY_SCALE = 1;
 float MUSIC_VOLUME = 0.1f;
 
 // animation speeds - lower is slower
-float waterAnimationSpeed = 0.15f;
-float runAnimationSpeed = 0.25f;
-float walkAnimationSpeed = 0.15f;
-float idleAnimationSpeed = 0.1f;
+float BUNNY_WATER_ANIMATION_SPEED = 0.15f;
+float BUNNY_RUN_ANIMATION_SPEED = 0.25f;
+float BUNNY_WALK_ANIMATION_SPEED = 0.15f;
+float BUNNY_IDLE_ANIMATION_SPEED = 0.1f;
+float FARMER_SHOOT_ANIMATION_SPEED = 0.2f;
+float FARMER_RUN_ANIMATION_SPEED = 0.2f;
+float FARMER_IDLE_ANIMATION_SPEED = 0.1f;
 
-// player speeds
-int runSpeed = 2;
-int walkSpeed = 1;
+// character speeds
+float BUNNY_RUN_SPEED = 2.0f;
+float BUNNY_WALK_SPEED = 1.0f;
+float FARMER_RUN_SPEED = 1.5f;
 
 struct GameState
 {
@@ -30,13 +34,14 @@ enum GameObjectType
 {
 	TYPE_NULL,
 	TYPE_BUNNY, // the player character
+	TYPE_FARMER, // the enemy character
 	TYPE_DESTROYED, // all objects of this type are destroyed at the end of each MainGameUpdate/tick
 };
 
 //! @brief Updates the player character and redraws it.
-void UpdatePlayer();
-//! @brief Updates the player character based on user input.
-void HandleControls();
+void UpdateBunny();
+//! @brief Updates the enemy character and redraws it.
+void UpdateFarmer();
 //! @brief Scales up the game's display size depending on the user's current screen resolution.
 void InitDisplaySize();
 
@@ -52,16 +57,23 @@ void MainGameEntry( PLAY_IGNORE_COMMAND_LINE )
 	Play::Audio::SetLoopingSoundVolume("music", MUSIC_VOLUME);
 
 
+	// add objects to the world
 	Play::CreateGameObject(TYPE_BUNNY, { DISPLAY_WIDTH/2, 24 }, 8, "bunny");
 	GameObject& obj_bunny = Play::GetGameObjectByType(TYPE_BUNNY);
-	Play::SetSprite(obj_bunny, "bunny_downidle", idleAnimationSpeed);
+	Play::SetSprite(obj_bunny, "bunny_downidle", BUNNY_IDLE_ANIMATION_SPEED);
+
+	Play::CreateGameObject(TYPE_FARMER, { DISPLAY_WIDTH / 2, DISPLAY_HEIGHT*2/3 }, 8, "farmer");
+	GameObject& obj_farmer = Play::GetGameObjectByType(TYPE_FARMER);
+	Play::SetSprite(obj_farmer, "farmer_idle", FARMER_IDLE_ANIMATION_SPEED);
+	Play::Graphics::SetSpriteOrigin(obj_farmer.spriteId, { 17, 11 }, false);
 }
 
 // Called by PlayBuffer every frame (60 times a second!)
 bool MainGameUpdate( float elapsedTime )
 {
 	Play::DrawBackground();
-	HandleControls();
+	UpdateBunny();
+	UpdateFarmer();
 	Play::PresentDrawingBuffer();
 	return Play::KeyDown( KEY_ESCAPE );
 }
@@ -73,62 +85,34 @@ int MainGameExit(void)
 	return PLAY_OK;
 }
 
-void UpdatePlayer()
-{
-	
-}
-
-void HandleControls()
+// TODO - only do the full water animation once, then go back to the idle animation in the same direction
+// TODO - do not allow the player to move while watering
+// TODO - tidy up the code / refactor
+void UpdateBunny()
 {
 	GameObject& obj_bunny = Play::GetGameObjectByType(TYPE_BUNNY);
-
-
-	// TODO - only do the water animation once, then go back to the idle animation in the same direction
-	// TODO - do not allow the player to move while watering
-	// TODO - tidy up the code / refactor
+	int currentSpriteId = obj_bunny.spriteId;
+	string currentSpriteName = Play::GetSpriteName(currentSpriteId);
 
 	// water animations
 	if (Play::KeyDown(Play::KEY_SPACE))
 	{
-		// check what direction the player is facing and set the correct water animation
-		int currentSpriteId = obj_bunny.spriteId;
-		string currentSpriteName = Play::GetSpriteName(currentSpriteId);
-		
-		if (Play::KeyDown(Play::KEY_UP)
-			|| Play::KeyDown(Play::KEY_W))
+		// check what direction the player was facing and set the correct water animation
+		if (currentSpriteName.find("UP") != string::npos)
 		{
-			Play::SetSprite(obj_bunny, "bunny_upwater", waterAnimationSpeed);
+			Play::SetSprite(obj_bunny, "bunny_upwater", BUNNY_WATER_ANIMATION_SPEED);
 		}
-		else if (Play::KeyDown(Play::KEY_DOWN)
-			|| Play::KeyDown(Play::KEY_S))
+		else if ((currentSpriteName.find("DOWN") != string::npos))
 		{
-			Play::SetSprite(obj_bunny, "bunny_downwater", waterAnimationSpeed);
+			Play::SetSprite(obj_bunny, "bunny_downwater", BUNNY_WATER_ANIMATION_SPEED);
 		}
-		else if (Play::KeyDown(Play::KEY_LEFT)
-			|| Play::KeyDown(Play::KEY_A))
+		else if (currentSpriteName.find("LEFT") != string::npos)
 		{
-			Play::SetSprite(obj_bunny, "bunny_leftwater", waterAnimationSpeed);
+			Play::SetSprite(obj_bunny, "bunny_leftwater", BUNNY_WATER_ANIMATION_SPEED);
 		}
-		else if (Play::KeyDown(Play::KEY_RIGHT)
-			|| Play::KeyDown(Play::KEY_D))
+		else if (currentSpriteName.find("RIGHT") != string::npos)
 		{
-			Play::SetSprite(obj_bunny, "bunny_rightwater", waterAnimationSpeed);
-		}
-		else if (currentSpriteName.find("UP") != std::string::npos)
-		{
-			Play::SetSprite(obj_bunny, "bunny_upwater", waterAnimationSpeed);
-		}
-		else if ((currentSpriteName.find("DOWN") != std::string::npos))
-		{
-			Play::SetSprite(obj_bunny, "bunny_downwater", waterAnimationSpeed);
-		}
-		else if (currentSpriteName.find("LEFT") != std::string::npos)
-		{
-			Play::SetSprite(obj_bunny, "bunny_leftwater", waterAnimationSpeed);
-		}
-		else if (currentSpriteName.find("RIGHT") != std::string::npos)
-		{
-			Play::SetSprite(obj_bunny, "bunny_rightwater", waterAnimationSpeed);
+			Play::SetSprite(obj_bunny, "bunny_rightwater", BUNNY_WATER_ANIMATION_SPEED);
 		}
 
 		//stand still while watering
@@ -138,68 +122,69 @@ void HandleControls()
 	else if (Play::KeyDown(Play::KEY_SHIFT)
 		&& (Play::KeyDown(Play::KEY_UP) || Play::KeyDown(Play::KEY_W)))
 	{
-		obj_bunny.velocity = { 0, runSpeed };
-		Play::SetSprite(obj_bunny, "bunny_uprun", runAnimationSpeed);
+		obj_bunny.velocity = { 0, BUNNY_RUN_SPEED };
+		Play::SetSprite(obj_bunny, "bunny_uprun", BUNNY_RUN_ANIMATION_SPEED);
 	}
 	else if (Play::KeyDown(Play::KEY_SHIFT)
 		&& (Play::KeyDown(Play::KEY_DOWN) || Play::KeyDown(Play::KEY_S)))
 	{
-		obj_bunny.velocity = { 0, -runSpeed };
-		Play::SetSprite(obj_bunny, "bunny_downrun", runAnimationSpeed);
+		obj_bunny.velocity = { 0, -BUNNY_RUN_SPEED };
+		Play::SetSprite(obj_bunny, "bunny_downrun", BUNNY_RUN_ANIMATION_SPEED);
 	}
 	else if (Play::KeyDown(Play::KEY_SHIFT)
 		&& (Play::KeyDown(Play::KEY_LEFT) || Play::KeyDown(Play::KEY_A)))
 	{
-		obj_bunny.velocity = { -runSpeed, 0 };
-		Play::SetSprite(obj_bunny, "bunny_leftrun", runAnimationSpeed);
+		obj_bunny.velocity = { -BUNNY_RUN_SPEED, 0 };
+		Play::SetSprite(obj_bunny, "bunny_leftrun", BUNNY_RUN_ANIMATION_SPEED);
 	}
 	else if (Play::KeyDown(Play::KEY_SHIFT)
 		&& (Play::KeyDown(Play::KEY_RIGHT) || Play::KeyDown(Play::KEY_D)))
 	{
-		obj_bunny.velocity = { runSpeed, 0 };
-		Play::SetSprite(obj_bunny, "bunny_rightrun", runAnimationSpeed);
+		obj_bunny.velocity = { BUNNY_RUN_SPEED, 0 };
+		Play::SetSprite(obj_bunny, "bunny_rightrun", BUNNY_RUN_ANIMATION_SPEED);
 	}
 	// walk animations
 	else if (Play::KeyDown(Play::KEY_UP) || Play::KeyDown(Play::KEY_W))
 	{
-		obj_bunny.velocity = { 0, walkSpeed };
-		Play::SetSprite(obj_bunny, "bunny_upwalk", walkAnimationSpeed);
+		obj_bunny.velocity = { 0, BUNNY_WALK_SPEED };
+		Play::SetSprite(obj_bunny, "bunny_upwalk", BUNNY_WALK_ANIMATION_SPEED);
 	}
 	else if (Play::KeyDown(Play::KEY_DOWN) || Play::KeyDown(Play::KEY_S))
 	{
-		obj_bunny.velocity = { 0, -walkSpeed };
-		Play::SetSprite(obj_bunny, "bunny_downwalk", walkAnimationSpeed);
+		obj_bunny.velocity = { 0, -BUNNY_WALK_SPEED };
+		Play::SetSprite(obj_bunny, "bunny_downwalk", BUNNY_WALK_ANIMATION_SPEED);
 	}
 	else if (Play::KeyDown(Play::KEY_LEFT) || Play::KeyDown(Play::KEY_A))
 	{
-		obj_bunny.velocity = { -walkSpeed, 0 };
-		Play::SetSprite(obj_bunny, "bunny_leftwalk", walkAnimationSpeed);
+		obj_bunny.velocity = { -BUNNY_WALK_SPEED, 0 };
+		Play::SetSprite(obj_bunny, "bunny_leftwalk", BUNNY_WALK_ANIMATION_SPEED);
 	}
 	else if (Play::KeyDown(Play::KEY_RIGHT) || Play::KeyDown(Play::KEY_D))
 	{
-		obj_bunny.velocity = { walkSpeed, 0 };
-		Play::SetSprite(obj_bunny, "bunny_rightwalk", walkAnimationSpeed);
+		obj_bunny.velocity = { BUNNY_WALK_SPEED, 0 };
+		Play::SetSprite(obj_bunny, "bunny_rightwalk", BUNNY_WALK_ANIMATION_SPEED);
 	}
 	// idle animations
-	else if (obj_bunny.velocity.x < 0)
+	// check what direction the player was facing and set the correct idle animation
+	else if (currentSpriteName.find("UP") != string::npos)
 	{
 		obj_bunny.velocity = { 0, 0 };
-		Play::SetSprite(obj_bunny, "bunny_leftidle", idleAnimationSpeed);
+		Play::SetSprite(obj_bunny, "bunny_upidle", BUNNY_IDLE_ANIMATION_SPEED);
 	}
-	else if (obj_bunny.velocity.x > 0)
+	else if (currentSpriteName.find("DOWN") != string::npos)
 	{
 		obj_bunny.velocity = { 0, 0 };
-		Play::SetSprite(obj_bunny, "bunny_rightidle", idleAnimationSpeed);
+		Play::SetSprite(obj_bunny, "bunny_downidle", BUNNY_IDLE_ANIMATION_SPEED);
 	}
-	else if (obj_bunny.velocity.y > 0)
+	else if (currentSpriteName.find("LEFT") != string::npos)
 	{
 		obj_bunny.velocity = { 0, 0 };
-		Play::SetSprite(obj_bunny, "bunny_upidle", idleAnimationSpeed);
+		Play::SetSprite(obj_bunny, "bunny_leftidle", BUNNY_IDLE_ANIMATION_SPEED);
 	}
-	else if (obj_bunny.velocity.y < 0)
+	else if (currentSpriteName.find("RIGHT") != string::npos)
 	{
 		obj_bunny.velocity = { 0, 0 };
-		Play::SetSprite(obj_bunny, "bunny_downidle", idleAnimationSpeed);
+		Play::SetSprite(obj_bunny, "bunny_rightidle", BUNNY_IDLE_ANIMATION_SPEED);
 	}
 
 	// update and draw the player
@@ -209,6 +194,56 @@ void HandleControls()
 		obj_bunny.pos = obj_bunny.oldPos;
 	}
 	Play::DrawObjectRotated(obj_bunny);
+}
+
+void UpdateFarmer()
+{
+	GameObject& obj_farmer = Play::GetGameObjectByType(TYPE_FARMER);
+
+	// shoot
+	if (Play::KeyDown(Play::KEY_ENTER))
+	{
+		Play::SetSprite(obj_farmer, "farmer_shoot", FARMER_SHOOT_ANIMATION_SPEED);
+		obj_farmer.velocity = { 0, 0 };
+	}
+	// run
+	else if (Play::KeyDown(Play::KEY_I))
+	{
+		obj_farmer.velocity = { 0, FARMER_RUN_SPEED };
+		Play::SetSprite(obj_farmer, "farmer_run", FARMER_RUN_ANIMATION_SPEED);
+	}
+	else if (Play::KeyDown(Play::KEY_K))
+	{
+		obj_farmer.velocity = { 0, -FARMER_RUN_SPEED };
+		Play::SetSprite(obj_farmer, "farmer_run", FARMER_RUN_ANIMATION_SPEED);
+	}
+	else if (Play::KeyDown(Play::KEY_J))
+	{
+		obj_farmer.velocity = { -FARMER_RUN_SPEED, 0 };
+		Play::SetSprite(obj_farmer, "farmer_run", FARMER_RUN_ANIMATION_SPEED);
+	}
+	else if (Play::KeyDown(Play::KEY_L))
+	{
+		obj_farmer.velocity = { FARMER_RUN_SPEED, 0 };
+		Play::SetSprite(obj_farmer, "farmer_run", FARMER_RUN_ANIMATION_SPEED);
+	}
+	// idle
+	else
+	{
+		obj_farmer.velocity = { 0, 0 };
+		Play::SetSprite(obj_farmer, "farmer_idle", FARMER_IDLE_ANIMATION_SPEED);
+	}
+
+	// farmer sits on the left side of the sprite, so we need to adjust the origin
+	Play::Graphics::SetSpriteOrigin(obj_farmer.spriteId, { 17, 11 }, false);
+
+	// update and draw the player
+	Play::UpdateGameObject(obj_farmer);
+	if (Play::IsHitboxLeavingDisplayArea(obj_farmer))
+	{
+		obj_farmer.pos = obj_farmer.oldPos;
+	}
+	Play::DrawObjectRotated(obj_farmer);
 }
 
 // scales up the game if the player's screen is large enough
