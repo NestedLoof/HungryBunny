@@ -2259,12 +2259,6 @@ namespace Play
 	//! @param dirn Which side of the screen are we checking? Defaults to all sides.
 	//! @return Returns true if the object is overlapping, false otherwise.
 	bool IsLeavingDisplayArea(GameObject& obj, Direction dirn = Direction::ALL);
-	// Created a version that checks the collision radius rather than the sprite in case of transparent space
-	//! @brief Checks whether the GameObject's collision radius is overlapping the edge of the screen and moving outwards.
-	//! @param obj The GameObject that we want to check for overlapping.
-	//! @param dirn Which side of the screen are we checking? Defaults to all sides.
-	//! @return Returns true if the object is overlapping, false otherwise.
-	bool IsHitboxLeavingDisplayArea(GameObject& obj, Direction dirn = Direction::ALL);
 	//! @brief Checks whether the animation has completed playing.
 	//! @param obj The GameObject that we want to check.
 	//! @return Returns true if the animation has finished, false if it hasn't.
@@ -5197,35 +5191,6 @@ namespace Play
 				return true;
 
 			if (pos.y + spriteSize.height - spriteOrigin.y > Window::GetHeight() && obj.velocity.y > 0)
-				return true;
-		}
-
-		return false;
-	}
-
-	bool IsHitboxLeavingDisplayArea(GameObject& obj, Direction dirn)
-	{
-		if (obj.type == -1) return false; // Not for noObject
-
-		int spriteID = obj.spriteId;
-		Vector2f hitbox = { obj.radius, obj.radius };
-		Point2f pos = TRANSFORM_SPACE(obj.pos);
-
-		if (dirn != Direction::VERTICAL)
-		{
-			if (pos.x - hitbox.width < 0 && obj.velocity.x < 0)
-				return true;
-
-			if (pos.x + hitbox.width > Window::GetWidth() && obj.velocity.x > 0)
-				return true;
-		}
-
-		if (dirn != Direction::HORIZONTAL)
-		{
-			if (pos.y - hitbox.height < 0 && obj.velocity.y < 0)
-				return true;
-
-			if (pos.y + hitbox.height > Window::GetHeight() && obj.velocity.y > 0)
 				return true;
 		}
 

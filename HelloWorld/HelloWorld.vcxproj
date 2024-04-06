@@ -190,13 +190,26 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Bunny.cpp" />
+    <ClCompile Include="Farmer.cpp" />
+    <ClCompile Include="GameLogic.cpp" />
+    <ClCompile Include="Interface.cpp" />
     <ClCompile Include="MainGame.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Play2.cpp" />
+    <ClCompile Include="Scores.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Play.h" />
+    <ClInclude Include="Bunny.h" />
+    <ClInclude Include="Farmer.h" />
+    <ClInclude Include="GameLogic.h" />
+    <ClInclude Include="Interface.h" />
+    <ClInclude Include="Play2.h" />
+    <ClInclude Include="Scores.h" />
+    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
