@@ -45,7 +45,7 @@ void Farmer::UpdateFarmer(Play::GameObject& obj_farmer)
 
 void Farmer::SpawnBulletIfNecessary(Play::GameObject& obj_farmer)
 {
-	// only spawn a bullet once the shooting animation is on the correct frame
+	// only spawn a bullet once the shooting animation is on the correct frame. Since the animation frame lasts for about 6 ticks, you get 6 bullets in a burst.
 	int farmerSpriteId = obj_farmer.spriteId;
 	std::string farmerSpriteName = Play::GetSpriteName(farmerSpriteId);
 	bool shooting = farmerSpriteName.find("SHOOT") != std::string::npos;

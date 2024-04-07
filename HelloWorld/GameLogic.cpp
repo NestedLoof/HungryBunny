@@ -52,29 +52,26 @@ Play::Point2D GameLogic::GetNewVegetablePosition()
 	return { x, y };
 }
 
-void GameLogic::UpdateCarrots()
+void GameLogic::UpdateVegetable(GameObjectType type, int points, int minRegen, int maxRegen, float regenDecayRate)
 {
-	// spawn in any carrots if necessary, up to the maximum number of carrots (MAX_NUM_CARROTS)
-	SpawnVegetables();
-
-	// Go through each carrot and check if it is being eaten by the bunny or if it has decayed.
-	for (int carrotId : Play::CollectGameObjectIDsByType(TYPE_CARROT))
+	// Go through each vegetable of the given type and check if it is being eaten by the bunny or if it has decayed.
+	for (int vegetableId : Play::CollectGameObjectIDsByType(type))
 	{
-		Play::GameObject& obj_carrot = Play::GetGameObject(carrotId);
-		// the carrot has decayed, so destroy it
-		if (Play::IsAnimationComplete(obj_carrot))
+		Play::GameObject& obj_vegetable = Play::GetGameObject(vegetableId);
+		// the vegetable has decayed, so destroy it
+		if (Play::IsAnimationComplete(obj_vegetable))
 		{
-			obj_carrot.type = TYPE_DESTROYED;
+			obj_vegetable.type = TYPE_DESTROYED;
 		}
-		// bunny eats the carrot when colliding with it as long as the bunny is still alive.
-		else if (Play::IsColliding(Play::GetGameObjectByType(TYPE_BUNNY), obj_carrot)
+		// bunny eats the vegetable when colliding with it as long as the bunny is still alive.
+		else if (Play::IsColliding(Play::GetGameObjectByType(TYPE_BUNNY), obj_vegetable)
 			&& gameState.bunnyState == STATE_PLAY)
 		{
-			obj_carrot.type = TYPE_DESTROYED;
-			gameState.score += 5;
+			obj_vegetable.type = TYPE_DESTROYED;
+			gameState.score += points;
 
-			// when bunny eats a carrot, healthbar gets increase
-			// the health regenerated per carrot is reduced depending on the current score, decaying from max to min.
+			// when bunny eats a vegetable, health is increased
+			// the health regenerated per vegetable is reduced depending on the current score, decaying from max to min.
 			// healthregen = MIN + (MAX-MIN)*e^(- DECAY_RATE * score)
 
 			// e.g. for carrots, if max regen = 200, min regen = 50, decay rate = 0.005:
@@ -83,8 +80,8 @@ void GameLogic::UpdateCarrots()
 			// e.g. for cabbage, if max regen = 300, min regen = 100, decay rate = 0.005:
 			// then regen at score 0 is +300, at score 60 is +250, at score 140 is +200, at score 400 is +75, at score 1000+ is +50
 
-			gameState.health += MIN_CARROT_HEALTH_REGEN +
-				(MAX_CARROT_HEALTH_REGEN - MIN_CARROT_HEALTH_REGEN) * exp(- DECAY_RATE * gameState.score);
+			gameState.health += minRegen +
+				(maxRegen - minRegen) * exp(-regenDecayRate * gameState.score);
 			if (gameState.health > MAX_HEALTH)
 			{
 				gameState.health = MAX_HEALTH;
@@ -93,48 +90,20 @@ void GameLogic::UpdateCarrots()
 			Play::PlayAudio("points");
 		}
 
-		// Draw the carrot
-		Play::UpdateGameObject(obj_carrot);
-		Play::DrawObject(obj_carrot);
+		// Draw the vegetable
+		Play::UpdateGameObject(obj_vegetable);
+		Play::DrawObject(obj_vegetable);
 	}
+}
 
-	// Go through each cabbage and check if it is being eaten by the bunny or if it has decayed.
-	for (int cabbageId : Play::CollectGameObjectIDsByType(TYPE_CABBAGE))
-	{
-		Play::GameObject& obj_cabbage = Play::GetGameObject(cabbageId);
-		// the cabbage has decayed, so destroy it
-		if (Play::IsAnimationComplete(obj_cabbage))
-		{
-			obj_cabbage.type = TYPE_DESTROYED;
-		}
-		// bunny eats the cabbage when colliding with it as long as the bunny is still alive.
-		else if (Play::IsColliding(Play::GetGameObjectByType(TYPE_BUNNY), obj_cabbage)
-			&& gameState.bunnyState == STATE_PLAY)
-		{
-			obj_cabbage.type = TYPE_DESTROYED;
-			gameState.score += 10;
+void GameLogic::UpdateVegetables()
+{
+	// spawn in any carrots if necessary, up to the maximum number of carrots (MAX_NUM_CARROTS)
+	SpawnVegetables();
 
-			// when bunny eats a cabbage, healthbar gets increase
-			// the health regenerated per cabbage follows the same decay as carrots
-			// it is reduced depending on the current score, decaying from max to min
-			// e.g. cabbage regen is +300 at score 0, +250 at score 40, +200 at score 110, +160 at score 270
-			// healthregen = MIN + (MAX-MIN)*e^(-score/100)
-
-			gameState.health += MIN_CABBAGE_HEALTH_REGEN +
-				(MAX_CABBAGE_HEALTH_REGEN - MIN_CABBAGE_HEALTH_REGEN) * exp(-gameState.score / 100);
-			if (gameState.health > MAX_HEALTH)
-			{
-				gameState.health = MAX_HEALTH;
-			}
-
-			Play::PlayAudio("points");
-		}
-
-
-		// Draw the carrot
-		Play::UpdateGameObject(obj_cabbage);
-		Play::DrawObject(obj_cabbage);
-	}
+	// update the vegetable animations, draw them, detect if they are being eaten and update the health and score accordingly, or destroy them if they have decayed.
+	UpdateVegetable(TYPE_CARROT, 5, MIN_CARROT_HEALTH_REGEN, MAX_CARROT_HEALTH_REGEN, DECAY_RATE);
+	UpdateVegetable(TYPE_CABBAGE, 10, MIN_CABBAGE_HEALTH_REGEN, MAX_CABBAGE_HEALTH_REGEN, DECAY_RATE);
 }
 
 // destroy the oldest flowers if there are too many, so we don't lag and the player can't have infinite bullet blockers making it too easy.

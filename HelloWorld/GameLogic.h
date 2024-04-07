@@ -24,7 +24,14 @@ public:
 	//! @brief Gets a randomised valid location for the next carrot to grow.
 	static Play::Point2D GetNewVegetablePosition();
 	//! @brief Detects if a carrot is being eaten and draws all carrots.
-	static void UpdateCarrots();
+	static void UpdateVegetables();
+	//! @brief Draws the vegetable, destroys it if it has decayed or been eaten, and updates health and score accordingly.
+	//! @param type The type of vegetable to update.
+	//! @param points How many points the player gains from eating this vegetable.
+	//! @param minRegen How much health the player gains from eating this vegetable at very high scores.
+	//! @param maxRegen How much health the player gains from eating this vegetable at the start of the game.
+	//! @param regenDecayRate How quickly the amount of health the player gains from eating this vegetable decays as the score increases.
+	static void UpdateVegetable(GameObjectType type, int points, int minRegen, int maxRegen, float regenDecayRate);
 	//! @brief Updates and draws the flowers that can block bullets (temporary walls)
 	static void UpdateFlowers();
 	//! @brief Destroy the oldest flowers if there are too many, so we don't lag and the player can't have infinite bullet blockers making it too easy.

@@ -76,8 +76,7 @@ bool Play2::IsHitboxLeavingDisplayArea(Play::GameObject& obj)
 bool Play2::RevertPositionIfNecessary(Play::GameObject& object)
 {
 	// set the object's position back to the old position if it has been updated to an invalid position.
-	Play2 play2 = Play2();
-	if (play2.IsHitboxLeavingDisplayArea(object)
+	if (IsHitboxLeavingDisplayArea(object)
 		|| HasBlockingCollision(object))
 	{
 		object.pos = object.oldPos;

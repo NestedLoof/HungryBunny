@@ -39,7 +39,7 @@ bool MainGameUpdate(float elapsedTime)
 	// only do the game related things after the start menu
 	if (gameState.bunnyState != STATE_START_GAME)
 	{
-		GameLogic::UpdateCarrots();
+		GameLogic::UpdateVegetables();
 		Farmer::UpdateFarmers();
 		GameLogic::UpdateFlowers();
 		Farmer::UpdateBullets();
