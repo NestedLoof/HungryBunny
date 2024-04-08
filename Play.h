@@ -3147,7 +3147,7 @@ namespace Play::Graphics
 		Render::SetRenderTarget( &m_playBuffer );
 
 		// Iterate through the directory
-		PLAY_ASSERT_MSG( std::filesystem::exists( path ), "PlayBuffer: Drectory provided does not exist." );
+		PLAY_ASSERT_MSG( std::filesystem::exists( path ), "PlayBuffer: Drectory provided does not exist.");
 
 		for( const auto& p : std::filesystem::directory_iterator( path ) )
 		{

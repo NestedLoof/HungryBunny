@@ -30,13 +30,13 @@ std::string Scores::GetFileName()
 	switch (gameState.difficulty)
 	{
 	case DIFFICULTY_EASY:
-		return "easyscores.txt";
+		return "Data\\Scores\\easyscores.txt";
 	case DIFFICULTY_MEDIUM:
-		return "mediumscores.txt";
+		return "Data\\Scores\\mediumscores.txt";
 	case DIFFICULTY_HARD:
-		return "hardscores.txt";
+		return "Data\\Scores\\hardscores.txt";
 	case DIFFICULTY_HUNGRY:
-		return "hungryscores.txt";
+		return "Data\\Scores\\hungryscores.txt";
 	}
 }
 
